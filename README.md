@@ -1,6 +1,6 @@
 # Agent task runner
 
-A deliberately small React/FastAPI coding challenge. The synchronous agent domain and tool layer are implemented; HTTP routing, persistence, and the product UI are intentionally deferred.
+A deliberately small React/FastAPI coding challenge. The synchronous backend is implemented through the HTTP and SQLite boundaries; the product UI is intentionally deferred.
 
 ## Proposed structure
 
@@ -40,7 +40,7 @@ A deliberately small React/FastAPI coding challenge. The synchronous agent domai
     └── vite.config.ts
 ```
 
-The domain/controller and tool files now exist. The API, persistence, and frontend API-client files above describe the intended later shape and will be added only when their behavior is implemented.
+The backend files now exist. The frontend API client above describes the intended later shape and will be added only when its behavior is implemented.
 
 ## Architectural boundaries
 
