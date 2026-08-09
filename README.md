@@ -68,6 +68,16 @@ npm run dev
 
 Open `http://localhost:5173`. Vite proxies `/api` requests to FastAPI at `http://127.0.0.1:8000`. The backend creates `backend/tasks.sqlite3` automatically on startup unless `TASK_DATABASE_PATH` specifies another path.
 
+## Docker
+
+As an optional alternative to local setup, run both services from the repository root:
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:5173`. SQLite history is stored in the Compose-managed `task_history` volume and survives container restarts.
+
 ## Example tasks
 
 ```text
@@ -96,6 +106,15 @@ cd frontend
 npm run build
 ```
 
+## End-to-end tests
+
+After completing the backend and frontend setup, install Chromium once and run the two Playwright tests from `frontend`:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
 ## Assumptions and tradeoffs
 
 - Tool routing is deterministic and supports only the predefined request formats.
@@ -103,7 +122,7 @@ npm run build
 - Weather data is deterministic mock data and does not call an external service.
 - Task history is currently unbounded.
 - JSON trace storage is readable but is not designed for SQL analytics.
-- Production deployment and reverse-proxy configuration are outside this challenge's scope.
+- Production deployment beyond the provided local Docker setup is outside this challenge's scope.
 
 ## Time spent
 
