@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/formattimestamp.ts","./src/main.tsx","./src/api/tasks.ts","./src/components/executiontrace.tsx","./src/components/taskform.tsx","./src/components/taskhistory.tsx","./src/components/taskresult.tsx","./vite.config.ts"],"version":"5.9.3"}
