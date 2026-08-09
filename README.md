@@ -1,75 +1,117 @@
-# Agent task runner
+# Agent Task Runner
 
-A deliberately small React/FastAPI coding challenge. The synchronous backend is implemented through the HTTP and SQLite boundaries; the product UI is intentionally deferred.
+## Overview
 
-## Proposed structure
+Agent Task Runner is a small full-stack application with a React and TypeScript frontend, a FastAPI backend, and SQLite task history. A deterministic `AgentController` routes each request to one of three predefined tools—text processing, calculation, or mock weather—and returns a structured execution trace with the result.
+
+## Architecture
 
 ```text
-.
-├── backend/
-│   ├── app/
-│   │   ├── agent/
-│   │   │   ├── controller.py
-│   │   │   └── models.py
-│   │   ├── tools/
-│   │   │   ├── calculator.py
-│   │   │   ├── text_processor.py
-│   │   │   ├── tool.py
-│   │   │   └── weather_mock.py
-│   │   ├── api.py
-│   │   ├── api_models.py
-│   │   ├── main.py
-│   │   └── persistence.py
-│   ├── tests/
-│   │   ├── test_agent_controller.py
-│   │   ├── test_api.py
-│   │   ├── test_persistence.py
-│   │   └── test_tools.py
-│   └── pyproject.toml
-└── frontend/
-    ├── src/
-    │   ├── api/
-    │   │   └── tasks.ts
-    │   ├── App.tsx
-    │   ├── main.tsx
-    │   └── styles.css
-    ├── index.html
-    ├── package.json
-    ├── tsconfig.app.json
-    ├── tsconfig.json
-    └── vite.config.ts
+React frontend
+    → FastAPI
+    → AgentController
+    → selected Tool
+    → SQLite persistence
+    → structured response
 ```
 
-The backend files now exist. The frontend API client above describes the intended later shape and will be added only when its behavior is implemented.
+Routing is deliberately rule-based rather than LLM-driven, which keeps supported behavior deterministic and testable. The `Tool` protocol contains only routing and execution methods; SQLite uses Python's built-in `sqlite3`, with tool names and trace events stored as readable JSON.
 
-## Architectural boundaries
+The backend remains synchronous because every operation is local and blocking at this scale. The frontend uses local React state, and the project avoids service layers, ORMs, state frameworks, and other abstractions that do not earn their cost here.
 
-- `api.py` and `api_models.py` own HTTP routing, validation, and status-code mapping. They translate between transport data and the application boundary without deciding how tasks run.
-- `agent/` owns task classification, tool selection, orchestration, and execution traces. It depends on tools and the repository contract through constructor injection, so it can be tested without FastAPI or SQLite.
-- `tools/` contains the small shared `Tool` contract and the three independent implementations. Tools receive plain domain input and return explicit results; they know nothing about HTTP or persistence.
-- `persistence.py` contains the task repository contract and its SQLite implementation together. Persistence is isolated behind that contract, while keeping the tiny data-access surface in one readable module.
-- `main.py` is the composition root. It creates concrete dependencies and wires them into the API; it should contain configuration and lifecycle setup, not business rules.
-- `frontend/src/api/tasks.ts` is the browser-side API boundary. `App.tsx` owns the small amount of UI state needed by the challenge, without introducing a component hierarchy or state library prematurely.
+## Requirements
 
-## Abstraction choices
+- Python 3.11 or newer; tested with Python 3.13.11
+- Node.js `^20.19.0` or `>=22.12.0`; tested with Node.js 25.2.1
+- npm; tested with npm 11.6.2
 
-Justified abstractions:
+The final validation used FastAPI 0.141.1, Uvicorn 0.52.1, pytest 8.4.2, React 19.2.8, TypeScript 5.9.3, and Vite 7.3.6. Supported dependency ranges are declared in `backend/pyproject.toml` and locked for the frontend in `frontend/package-lock.json`.
 
-- A structural `Tool` protocol gives the controller one stable contract and lets tests provide a trivial fake tool. No inheritance or registration framework is required.
-- A `TaskRepository` protocol isolates SQLite and makes controller tests deterministic. The abstraction stays task-specific rather than becoming a generic repository.
-- `AgentController` provides one home for routing and orchestration rules that are independently testable from HTTP.
-- Explicit task, tool-result, and trace models make execution behavior inspectable and error outcomes predictable.
-- Constructor/function injection keeps dependency ownership visible and avoids mutable global state.
+## Backend setup
 
-Over-engineering for this challenge:
+From a fresh clone on macOS or Linux:
 
-- A dependency-injection container, service locator, plugin discovery, command bus, or event bus.
-- Generic repository or CRUD base classes, unit-of-work machinery, and ORM models for a single SQLite-backed task aggregate.
-- A class hierarchy for tools beyond the minimal protocol, or separate factories/registries before routing rules require them.
-- Duplicate DTO layers for HTTP, application, domain, and persistence when a small number of boundary models can be reused safely.
-- Async repository/tool APIs for synchronous SQLite and in-process operations.
-- A frontend state library, generated API client, design system, or multi-page routing for one small workflow.
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[test]"
+```
 
-## Setup
+On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead.
 
-Backend dependencies are declared in `backend/pyproject.toml`; frontend dependencies and scripts are in `frontend/package.json`.
+## Frontend setup
+
+In a separate terminal from the repository root:
+
+```bash
+cd frontend
+npm ci
+```
+
+## Running the application
+
+Start the backend in the first terminal:
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+```
+
+Start the frontend in the second terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open `http://localhost:5173`. Vite proxies `/api` requests to FastAPI at `http://127.0.0.1:8000`. The backend creates `backend/tasks.sqlite3` automatically on startup unless `TASK_DATABASE_PATH` specifies another path.
+
+## Example tasks
+
+```text
+uppercase: deployment ready
+lowercase: RELEASE NOTES
+word count: one two three
+calculate: 9 / 4
+weather in Toronto
+```
+
+The calculator prefix is optional, so `12 + 8` also works.
+
+## Testing
+
+Run the backend tests from the repository root after backend setup:
+
+```bash
+cd backend
+.venv/bin/python -m pytest -q
+```
+
+Run the frontend type-check and production build after frontend setup:
+
+```bash
+cd frontend
+npm run build
+```
+
+## Assumptions and tradeoffs
+
+- Tool routing is deterministic and supports only the predefined request formats.
+- The calculator accepts two numeric operands and one of `+`, `-`, `*`, or `/`; it does not support parentheses or chained expressions.
+- Weather data is deterministic mock data and does not call an external service.
+- Task history is currently unbounded.
+- JSON trace storage is readable but is not designed for SQL analytics.
+- Production deployment and reverse-proxy configuration are outside this challenge's scope.
+
+## Time spent
+
+Approximately [fill in] hours of focused implementation and review.
+
+## With more time
+
+- Add a simple limit or pagination for task history.
+- Add broader integration and browser-level end-to-end tests.
+- Define stronger production deployment and reverse-proxy configuration.
+- Consider multi-step tool execution if a concrete workflow requires it.

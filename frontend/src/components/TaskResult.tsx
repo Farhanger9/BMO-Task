@@ -12,7 +12,7 @@ export function TaskResult({ execution }: TaskResultProps) {
     : "No tool matched";
 
   return (
-    <section className="panel result-panel" aria-labelledby="current-result-title">
+    <section className="panel" aria-labelledby="current-result-title">
       <div className="section-heading result-heading">
         <div>
           <p className="section-kicker">Latest execution</p>
@@ -38,4 +38,3 @@ export function TaskResult({ execution }: TaskResultProps) {
     </section>
   );
 }
-

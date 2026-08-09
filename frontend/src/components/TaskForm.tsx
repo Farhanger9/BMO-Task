@@ -42,7 +42,7 @@ export function TaskForm({
   }
 
   return (
-    <section className="panel task-form-panel" aria-labelledby="task-form-title">
+    <section className="panel" aria-labelledby="task-form-title">
       <div className="section-heading">
         <div>
           <p className="section-kicker">New execution</p>
@@ -80,4 +80,3 @@ export function TaskForm({
     </section>
   );
 }
-
